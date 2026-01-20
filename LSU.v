@@ -55,7 +55,6 @@ module LSU (
     // === TLB 实例 ===
     wire [31:0] tlb_paddr;
     wire tlb_hit, tlb_miss;
-    // 简单起见，TLB 写端口接地（只读或由硬件预填，这里作为直通的回退）
     TLB u_tlb (
         .clk(clk), .rst_n(rst_n),
         .vaddr(addr_reg), .req(state == WAIT_CACHE),
@@ -63,7 +62,7 @@ module LSU (
         .we(1'b0), .w_vaddr(32'b0), .w_paddr(32'b0)
     );
 
-    // 策略：如果 TLB 没命中，默认物理地址 = 虚拟地址 (Bare-metal 模式)
+    // 如果 TLB 没命中，默认物理地址 = 虚拟地址 (Bare-metal 模式)
     wire [31:0] effective_paddr = tlb_hit ? tlb_paddr : addr_reg;
 
     // === Cache 实例 ===
@@ -164,15 +163,15 @@ module LSU (
                         end
                     end
                     WAIT_CACHE: begin
-                        // Cache 命中且返回有效数据 (对于 Store，valid_out 也是完成信号)
+                        // Cache 命中且返回有效数据 
                         if (cache_valid_out) begin
                             wb_valid <= 1;
-                            // 如果是 Load，写回读取的数据；如果是 Store，写回 0 (或不需要写回)
+                            // 如果是 Load，写回读取的数据；如果是 Store，写回 0 
                             wb_value <= mem_is_load_reg ? final_rdata : 32'b0;
                             wb_rob_idx <= rob_idx_reg;
                             wb_dest_tag <= rd_tag_reg;
                             wb_dest_is_fp <= rd_is_fp_reg;
-                            wb_exception <= 0; // 暂时假设无异常
+                            wb_exception <= 0;
                             state <= IDLE; // 任务完成，回到 IDLE
                         end
                     end

@@ -4,15 +4,15 @@ module MemArbiter (
     input wire clk,
     input wire rst_n,
 
-    // === I-Cache 接口 ===
+    // I-Cache 接口 
     input wire         i_req,
-    input wire         i_we, // I-Cache 只有 Read，但保留接口通用性
+    input wire         i_we, 
     input wire [31:0]  i_addr,
     input wire [127:0] i_wdata,
     output reg [127:0] i_rdata,
     output reg         i_ready,
 
-    // === D-Cache (LSU) 接口 ===
+    // D-Cache (LSU) 接口
     input wire         d_req,
     input wire         d_we,
     input wire [31:0]  d_addr,
@@ -20,7 +20,7 @@ module MemArbiter (
     output reg [127:0] d_rdata,
     output reg         d_ready,
 
-    // === 主存接口 ===
+    // 主存接口
     output reg         mem_req,
     output reg         mem_we,
     output reg [31:0]  mem_addr,
@@ -61,7 +61,6 @@ module MemArbiter (
 
         case (state)
             IDLE: begin
-                // 在 IDLE 状态直接透传请求，节省一周期延迟
                 if (d_req) begin
                     mem_req = 1;
                     mem_we = d_we;

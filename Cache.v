@@ -4,7 +4,7 @@ module Cache (
     input wire clk,
     input wire rst_n,
 
-    // === CPU 侧接口 ===
+    // CPU 侧接口
     input wire [31:0]  paddr,
     input wire         req,
     input wire         we,
@@ -14,7 +14,7 @@ module Cache (
     output reg         valid_out,
     output wire        stall_cpu,
 
-    // === 主存接口 ===
+    //主存接口
     output reg         mem_req,
     output reg         mem_we,
     output reg [31:0]  mem_addr,
@@ -23,37 +23,29 @@ module Cache (
     input  wire        mem_ready
 );
 
-    // 参数
+    //参数
     localparam SETS = 1 << `CACHE_INDEX_BITS;
     localparam TAG_BITS = `CACHE_TAG_BITS;
     
-    // === 地址分解 (修复了这里的范围顺序和位偏移) ===
+    //地址分解 
     wire [TAG_BITS-1:0]      tag;
     wire [`CACHE_INDEX_BITS-1:0] index;
     wire [3:0]               offset;
 
-    // 1. Tag: 高位 [31 : 10]
+    // 高位 [31 : 10]
     assign tag   = paddr[31 : 32-TAG_BITS]; 
     
-    // 2. Index: 中间位 [9 : 4] (注意这里必须是 高位:低位)
-    // Offset是4位(0-3), 所以Index从第4位开始，长度是6位(4+6-1=9)
+    // 中间位 [9 : 4] 
     assign index = paddr[4 + `CACHE_INDEX_BITS - 1 : 4]; 
     
-    // 3. Offset: 低位 [3 : 0]
+    // 低位 [3 : 0]
     assign offset= paddr[3:0];
 
-    // === 存储阵列 ===
     reg [127:0] data_way0 [0:SETS-1];
     reg [127:0] data_way1 [0:SETS-1];
-    
-    // Tag Array: {Dirty, Valid, Tag}
-    // width = 1 + 1 + TAG_BITS
     reg [TAG_BITS+1:0] tag_way0 [0:SETS-1]; 
-    reg [TAG_BITS+1:0] tag_way1 [0:SETS-1];
-    
+    reg [TAG_BITS+1:0] tag_way1 [0:SETS-1];   
     reg lru [0:SETS-1];
-
-    // === 读取 Tag 信息 ===
     wire [TAG_BITS+1:0] raw_tag0;
     wire [TAG_BITS+1:0] raw_tag1;
     
@@ -100,7 +92,6 @@ module Cache (
         endcase
     end
 
-    // === 状态机 ===
     localparam IDLE = 0, REFILL = 1, WRITEBACK = 2;
     reg [1:0] state;
     
@@ -114,8 +105,6 @@ module Cache (
     assign victim_tag = victim_way ? saved_tag1 : saved_tag0;
 
     assign stall_cpu = (req && !hit);
-
-    // 临时变量，用于 Read-Modify-Write
     reg [127:0] temp_data; 
     reg [TAG_BITS+1:0] temp_tag;
 
